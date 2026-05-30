@@ -1,9 +1,17 @@
 
+import argparse
 import requests
 import re
 import json
 import time
 from pathlib import Path
+
+SESSION_DATES_PATHS = Path("data/session_dates.json")
+SMALL_INPUT_SIZE = 10
+MEDIUM_INPUT_SIZE = 50
+BIG_INPUT_SIZE = 181
+SIZES = {"small": SMALL_INPUT_SIZE, "medium": MEDIUM_INPUT_SIZE, "big": BIG_INPUT_SIZE}
+
 
 BASE_URL = "https://www.strazha.bg"
 REMIX_RE = re.compile(r"window\.__remixContext\s*=\s*(\{.*?\});\s*</script>", re.DOTALL)
@@ -88,7 +96,17 @@ def scrape_session_serial(date: str, output_dir: Path) -> Path:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Scrape parliament sessions serially.")
+    parser.add_argument("--corpus", choices=SIZES, default="small",
+                        help="how many sessions to scrape (small=10, medium=50, big=181)")
+    args = parser.parse_args()
+
+    dates = json.loads(SESSION_DATES_PATHS.read_text(encoding="utf-8"))
+    selected = dates[:SIZES[args.corpus]]
+    output_dir = Path("data/raw") / args.corpus
+
     t0 = time.perf_counter()
-    result = scrape_session_serial("2024-12-18", Path("data/raw"))
+    for date in selected:
+        scrape_session_serial(date, output_dir)
     elapsed = time.perf_counter() - t0
-    print(f"Wrote {result} in {elapsed:.2f}s")
+    print(f"Scraped {len(selected)} sessions ({args.corpus}) into {output_dir} in {elapsed:.2f}s")
