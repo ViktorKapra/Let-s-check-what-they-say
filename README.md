@@ -77,6 +77,3 @@ python src\dump_results.py --corpus all
 - Официално задание: [`docs/Course Project (4).docx.md`](docs/Course%20Project%20(4).docx.md).
 - Промптове към AI асистент: [`docs/promptove.md`](docs/promptove.md).
 
-## Автор
-
-[Име Фамилия] — курсов проект, [специалност], [учебна година].
