@@ -9,10 +9,8 @@ the report needs:
                                            party, not just frequent everywhere).
   data/results/similarity_{corpus}.csv  -- full party x party cosine-similarity
                                            matrix (how alike two parties' language is).
-
-Note: the vectorized variant computes unigram TF-IDF + cosine similarity only.
-It does NOT produce raw word-frequency counts or bigrams/trigrams (that lives in
-the serial variant's `by_party` Counters), so those are not dumped here.
+  data/results/top_ngrams_{corpus}.csv  -- top-N bigrams and trigrams per party,
+                                           by raw count (most-used phrases).
 
 Run from the project root:
     python src/dump_results.py                 # all three corpora, top 20
@@ -54,6 +52,18 @@ def dump_similarity(parties: list[str], matrix, out_csv: Path) -> None:
     print(f"Saved {out_csv}")
 
 
+def dump_ngrams(top_bigrams: dict, top_trigrams: dict, out_csv: Path) -> None:
+    """Top-N bigrams and trigrams per party (raw counts), one CSV with both."""
+    with open(out_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["party", "ngram_type", "rank", "ngram", "count"])
+        for ngram_type, source in (("bigram", top_bigrams), ("trigram", top_trigrams)):
+            for party, items in source.items():
+                for rank, (ngram, count) in enumerate(items, start=1):
+                    writer.writerow([party, ngram_type, rank, ngram, count])
+    print(f"Saved {out_csv}")
+
+
 def dump_corpus(corpus: str, top: int) -> None:
     csv_path = PROC_DIR / f"speeches_{corpus}.csv"
     df = cmn.load_speeches(csv_path)
@@ -65,6 +75,8 @@ def dump_corpus(corpus: str, top: int) -> None:
     dump_tfidf(result["top_words"], RESULTS_DIR / f"tfidf_{corpus}.csv")
     dump_similarity(result["parties"], result["similarity_matrix"],
                     RESULTS_DIR / f"similarity_{corpus}.csv")
+    dump_ngrams(result["top_bigrams"], result["top_trigrams"],
+                RESULTS_DIR / f"top_ngrams_{corpus}.csv")
 
     # Console preview so you can eyeball the findings immediately.
     print("Most distinctive words per party (top 8 by TF-IDF):")
